@@ -185,6 +185,11 @@
 		return obj === '';
 	}
 
+
+	_.isFunction = function(fn) {
+		return fn && typeof fn === 'function';
+	}
+
 /***/ },
 /* 3 */
 /***/ function(module, exports, __webpack_require__) {
@@ -420,16 +425,11 @@
 /* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var patch = {};
 	var VPatch = __webpack_require__(6);
-	var applyAttr = __webpack_require__(3);
 	var _ = __webpack_require__(2);
 	var findIndexNode = __webpack_require__(9);
+	var curd = __webpack_require__(10);
 
-	// 遍历tree的index
-	patch.patchProps = function(one, two, diff) {
-
-	};
 
 	var findPatchNode = function(node, patch) {
 		var children = {};
@@ -441,6 +441,15 @@
 		}
 		return children;
 	}
+
+	// 每个type对应的操作函数
+	var typeOpMaps = {};
+	typeOpMaps[VPatch.REMOVE] = curd.removeChild;
+	typeOpMaps[VPatch.INSERT] = curd.insertChild;
+	typeOpMaps[VPatch.REPLACE] = curd.replaceChild;
+	typeOpMaps[VPatch.PROPS] = curd.applyAttributes;
+	typeOpMaps[VPatch.TEXTNODE] = curd.replaceContent;
+
 
 	// 增量渲染
 	// 边查找边操作有bug
@@ -455,63 +464,18 @@
 					applies = [applies];
 				}
 				applies.forEach(function(apply) {
-					switch (apply.type) {
-						case VPatch.REMOVE:
-							removeChild(apply);
-							break;
-						case VPatch.INSERT:
-							insertChild(child, apply);
-							break;
-						case VPatch.REPLACE:
-							replaceChild(child, apply);
-							break;
-						case VPatch.PROPS:
-							applyAttr.applyAttributes(child, apply.right);
-							break;
-						case VPatch.TEXTNODE:
-							replaceContent(child, apply.right);
-							break;
-						default:
-							break;
+					if (_.isFunction(typeOpMaps[apply.type])) {
+						typeOpMaps[apply.type](child, apply);
 					}
 				});
 			}
 		}
 	};
 
-	// textNode节点，替换内容
-	function replaceContent(node, text) {
-		node.innerHTML = text;
-	}
-
-	// 删除节点
-	function removeChild(apply) {
-		apply.left.parentNode.removeChild(apply.left);
-	}
-
-
-	// 添加节点
-	function insertChild(node, apply) {
-		if (!apply.left && apply.right) {
-			node.appendChild(apply.right)
-		}
-	}
-
-
-	// 替换节点
-	function replaceChild(node, apply) {
-		var parent = node.parentNode;
-		var newNode = apply.right.cloneNode(true);
-		parent.replaceChild(newNode, node);
-	}
-
-
-	patch.patchDom = function(patch) {
+	module.exports = exports = function(patch) {
 		var node = patch.left;
 		patchDom(node, patch, 0);
-	}
-
-	module.exports = exports = patch;
+	};
 
 /***/ },
 /* 9 */
@@ -541,6 +505,54 @@
 		} else {
 			return findNode;
 		}
+	};
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * dom增、删、改
+	 */
+	var applyAttr = __webpack_require__(3);
+
+	function insertChild(node, apply) {
+		if (!apply.left && apply.right) {
+			node.appendChild(apply.right)
+		}
+	}
+
+
+	// 替换节点
+	function replaceChild(node, apply) {
+		var parent = node.parentNode;
+		var newNode = apply.right.cloneNode(true);
+		parent.replaceChild(newNode, node);
+	}
+
+	// 删除节点
+	function removeChild(node, apply) {
+		apply.left.parentNode.removeChild(apply.left);
+	}
+
+	// textNode节点，替换内容
+	function replaceContent(node, apply) {
+		if (apply && typeof apply.right === 'string') {
+			node.innerHTML = apply.right;
+		}
+	}
+
+	function applyAttributes(node, apply) {
+		applyAttr.applyAttributes(node, apply.right);
+	}
+
+
+	module.exports = {
+		insertChild: insertChild,
+		removeChild: removeChild,
+		replaceContent: replaceContent,
+		replaceChild: replaceChild,
+		applyAttributes: applyAttributes
 	};
 
 /***/ }

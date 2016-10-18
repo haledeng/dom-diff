@@ -51,7 +51,7 @@
 		ele2Dom.appendChild(ele2.render());
 		var diffP = domDiff.diffDom(one, ele2Dom.children.item(0));
 		console.log(diffP);
-		domDiff.patch.patchDom(diffP);
+		domDiff.patch(diffP);
 	</script>
 </body>
 </html>
