@@ -5,7 +5,7 @@
 	<title>Document</title>
 </head>
 <body>
-	<div id="container" data-id="123">
+	<div id="container" data-id="123" style="margin-top:100px;background:red;border:1px solid red;">
 		<ul id="menu">
 			<li>hello 1</li>
 			<li>hello 2</li>
@@ -22,8 +22,8 @@
 			tagName: 'div',
 			attr: {id: 'container'},
 			children: [new VNode(
-				'ul', 
-				{class: 'menu'}, 
+				'ul',
+				{class: 'menu'},
 				new VNode(
 					'li', null, 'hello'))]
 			});
@@ -32,8 +32,8 @@
 			tagName: 'div',
 			attr: {class: 'container', style: 'font-size:14px;'},
 			children: [new VNode(
-				'ul', 
-				{class: 'menu'}, 
+				'ul',
+				{class: 'menu'},
 				new VNode(
 					'li', null, 'hello world1234'))
 			, new VNode(

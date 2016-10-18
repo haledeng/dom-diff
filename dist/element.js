@@ -47,8 +47,8 @@
 	var VNode = __webpack_require__(1);
 	var applyProps = __webpack_require__(3);
 	var diffProps = __webpack_require__(4);
-	var diffDom = __webpack_require__(5);
-	var patch = __webpack_require__(8);
+	var diffDom = __webpack_require__(6);
+	var patch = __webpack_require__(9);
 	window.domDiff = {
 		applyProps: applyProps,
 		diffProps: diffProps,
@@ -196,6 +196,18 @@
 
 	var _ = __webpack_require__(2);
 
+	var defaultStyleValue = {
+
+	}
+
+	// 获取样式属性的默认值
+	function getDefaultStyleValue(prop) {
+		if (/(margin|padding|fontsize)/i.test(prop)) {
+			return 0;
+		} else if (/(background|border)/i.test(prop)) {
+			return 'none';
+		}
+	}
 
 	var attrs = {
 		applyAttributes: function(node, props) {
@@ -217,7 +229,12 @@
 		},
 		patchObject: function(node, propName, propValue) {
 			for (var k in propValue) {
-				node[propName][k] = propValue[k];
+				// 删除的样式如何处理？
+				if (propValue[k] === undefined) {
+					node[propName][k] = getDefaultStyleValue(k);
+				} else {
+					node[propName][k] = propValue[k];
+				}
 			}
 		},
 		getAttr: function(node) {
@@ -231,15 +248,27 @@
 			}
 			return ret;
 		}
-	}
+	};
 
 	module.exports = exports = attrs;
 
 /***/ },
 /* 4 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	module.exports = exports = function diffProps(one, two) {
+	var parse = __webpack_require__(5);
+
+	function parseStyle(one, two, key) {
+		if (key === 'style') {
+			var oneStyles = parse(one[key]);
+			var twoStyles = parse(two[key]);
+			return diffProps(oneStyles, twoStyles);
+		} else {
+			return two[key];
+		}
+	}
+
+	function diffProps(one, two) {
 		var diff;
 		for (var k in one) {
 			if (!(k in two)) {
@@ -249,27 +278,58 @@
 
 			if (one[k] !== two[k]) {
 				diff = diff || {};
-				diff[k] = two[k];
+				// style增量更新
+				diff[k] = parseStyle(one, two, k);
+				// diff[k] = two[k];
 			}
 		}
 
 		for (var key in two) {
 			if (!(key in one)) {
 				diff = diff || {};
-				diff[key] = two[key];
+				diff[key] = parseStyle(one, two, key);
+				// diff[key] = two[key];
 			}
 		}
+
 		return diff;
 	};
+
+
+	module.exports = diffProps;
 
 /***/ },
 /* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(2);
-	var VPatch = __webpack_require__(6);
+	var transformStyleName = function(name) {
+	    var reg = /\-([a-z])/g;
+	    return name.replace(reg, function(all, key) {
+	        return key.toUpperCase();
+	    });
+	};
+
+	module.exports = function(attr) {
+
+	    // style
+	    var attrReg = /([a-zA-Z\-]*)\s*?\:\s*?([a-zA-Z0-9%\-\s]*);?/g;
+	    var attrs = {};
+	    attr && attr.replace(attrReg, function(all, key, value) {
+	        key = transformStyleName(key);
+	        attrs[key] = _.trim(value);
+	    });
+	    return attrs;
+	};
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var _ = __webpack_require__(2);
+	var VPatch = __webpack_require__(7);
 	var diffProps = __webpack_require__(4);
-	var isTextNode = __webpack_require__(7);
+	var isTextNode = __webpack_require__(8);
 	var attr = __webpack_require__(3);
 
 
@@ -394,7 +454,7 @@
 	};
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports) {
 
 	function VPatch(type, node, right) {
@@ -414,7 +474,7 @@
 	module.exports = VPatch;
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports) {
 
 	module.exports = function(node) {
@@ -422,13 +482,13 @@
 	};
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var VPatch = __webpack_require__(6);
+	var VPatch = __webpack_require__(7);
 	var _ = __webpack_require__(2);
-	var findIndexNode = __webpack_require__(9);
-	var curd = __webpack_require__(10);
+	var findIndexNode = __webpack_require__(10);
+	var curd = __webpack_require__(11);
 
 
 	var findPatchNode = function(node, patch) {
@@ -478,7 +538,7 @@
 	};
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports) {
 
 	/**
@@ -508,7 +568,7 @@
 	};
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
