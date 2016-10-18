@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+</head>
+<body>
+	<div id="container" data-id="123">
+		<ul id="menu">
+			<li>hello 1</li>
+			<li>hello 2</li>
+		</ul>
+		<p>
+			<span>hello</span>
+		</p>
+	</div>
+	<script src="../dist/element.js"></script>
+	<script>
+		var one = document.querySelector('#container');
+		var VNode = domDiff.VNode;
+		var ele1 = new VNode({
+			tagName: 'div',
+			attr: {id: 'container'},
+			children: [new VNode(
+				'ul', 
+				{class: 'menu'}, 
+				new VNode(
+					'li', null, 'hello'))]
+			});
+
+		var ele2 = new VNode({
+			tagName: 'div',
+			attr: {class: 'container', style: 'font-size:14px;'},
+			children: [new VNode(
+				'ul', 
+				{class: 'menu'}, 
+				new VNode(
+					'li', null, 'hello world1234'))
+			, new VNode(
+				'p',
+				{id: 'p'},
+				[new VNode('span', null, 'hello world'), new VNode('span', null, 'hello world1234')]
+			), new VNode(
+				'span',
+				{class: 'name'},
+				'span hello'
+			)]
+		});
+
+		var ele2Dom = document.createDocumentFragment();
+		ele2Dom.appendChild(ele2.render());
+		var diffP = domDiff.diffDom(one, ele2Dom.children.item(0));
+		console.log(diffP);
+		domDiff.patch.patchDom(diffP);
+	</script>
+</body>
+</html>
