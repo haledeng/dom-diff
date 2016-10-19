@@ -46,9 +46,9 @@
 
 	var VNode = __webpack_require__(1);
 	var applyProps = __webpack_require__(3);
-	var diffProps = __webpack_require__(4);
-	var diffDom = __webpack_require__(6);
-	var patch = __webpack_require__(9);
+	var diffProps = __webpack_require__(5);
+	var diffDom = __webpack_require__(7);
+	var patch = __webpack_require__(10);
 	window.domDiff = {
 		applyProps: applyProps,
 		diffProps: diffProps,
@@ -195,20 +195,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(2);
-
-	var defaultStyleValue = {
-
-	}
-
-	// 获取样式属性的默认值
-	function getDefaultStyleValue(prop) {
-		if (/(margin|padding|fontsize)/i.test(prop)) {
-			return 0;
-		} else if (/(background|border)/i.test(prop)) {
-			return 'none';
-		}
-	}
-
+	var camelize = __webpack_require__(4);
 	var attrs = {
 		applyAttributes: function(node, props) {
 			for (var propName in props) {
@@ -229,9 +216,8 @@
 		},
 		patchObject: function(node, propName, propValue) {
 			for (var k in propValue) {
-				// 删除的样式如何处理？
-				if (propValue[k] === undefined) {
-					node[propName][k] = getDefaultStyleValue(k);
+				if (propValue[k] === undefined && propName === 'style') {
+					node[propName].removeProperty(camelize.unCamel(k));
 				} else {
 					node[propName][k] = propValue[k];
 				}
@@ -254,9 +240,28 @@
 
 /***/ },
 /* 4 */
+/***/ function(module, exports) {
+
+	module.exports = {
+		camel: function(styleName) {
+			var reg = /\-([a-z])/g;
+			return styleName.replace(reg, function(all, key) {
+				return key.toUpperCase();
+			});
+		},
+		unCamel: function(styleName) {
+			var reg = /[A-Z]/g;
+			return styleName.replace(reg, function(all) {
+				return '-' + all.toLowerCase();
+			});
+		}
+	};
+
+/***/ },
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var parse = __webpack_require__(5);
+	var parse = __webpack_require__(6);
 
 	function parseStyle(one, two, key) {
 		if (key === 'style') {
@@ -280,7 +285,6 @@
 				diff = diff || {};
 				// style增量更新
 				diff[k] = parseStyle(one, two, k);
-				// diff[k] = two[k];
 			}
 		}
 
@@ -299,37 +303,32 @@
 	module.exports = diffProps;
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(2);
-	var transformStyleName = function(name) {
-	    var reg = /\-([a-z])/g;
-	    return name.replace(reg, function(all, key) {
-	        return key.toUpperCase();
-	    });
-	};
+	var camelize = __webpack_require__(4);
 
 	module.exports = function(attr) {
 
 	    // style
-	    var attrReg = /([a-zA-Z\-]*)\s*?\:\s*?([a-zA-Z0-9%\-\s]*);?/g;
+	    var attrReg = /([a-zA-Z\-]*)\s*?\:\s*?([a-zA-Z0-9%\-\s\#]*);?/g;
 	    var attrs = {};
 	    attr && attr.replace(attrReg, function(all, key, value) {
-	        key = transformStyleName(key);
+	        // key = camelize.camel(key);
 	        attrs[key] = _.trim(value);
 	    });
 	    return attrs;
 	};
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(2);
-	var VPatch = __webpack_require__(7);
-	var diffProps = __webpack_require__(4);
-	var isTextNode = __webpack_require__(8);
+	var VPatch = __webpack_require__(8);
+	var diffProps = __webpack_require__(5);
+	var isTextNode = __webpack_require__(9);
 	var attr = __webpack_require__(3);
 
 
@@ -454,7 +453,7 @@
 	};
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports) {
 
 	function VPatch(type, node, right) {
@@ -474,7 +473,7 @@
 	module.exports = VPatch;
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports) {
 
 	module.exports = function(node) {
@@ -482,13 +481,13 @@
 	};
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var VPatch = __webpack_require__(7);
+	var VPatch = __webpack_require__(8);
 	var _ = __webpack_require__(2);
-	var findIndexNode = __webpack_require__(10);
-	var curd = __webpack_require__(11);
+	var findIndexNode = __webpack_require__(11);
+	var curd = __webpack_require__(12);
 
 
 	var findPatchNode = function(node, patch) {
@@ -538,7 +537,7 @@
 	};
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports) {
 
 	/**
@@ -568,7 +567,7 @@
 	};
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
